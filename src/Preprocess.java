@@ -58,14 +58,17 @@ public class Preprocess {
       	  	  if(info == null || info.length < 2) return;
     		  String actor = info[0];	
     		  if(! isPureAscii(actor)) return;
+//    		  if(actor.contains("|")) {System.err.println("actor[" + actor + "] contains |");System.exit(1);}
     		  TreeSet<String> movies = new TreeSet<String>();
     		  for(int i = 1; i < info.length; ++i) {
     			  if(info[i].equals("") || (!isPureAscii(info[i]))) continue;
+//        		  if(info[i].contains("|")) {System.err.println("actor[" + actor + "] contains |");System.exit(1);}
     			  movies.add(info[i]);
     		  }
+    		  if(movies.size() < 1) return;
     		  String[] movieList = new String[movies.size()];
     		  movieList = movies.toArray(movieList);
-    		  context.write(new Text(actor), new Text(StringUtils.join(movieList, ",")));
+    		  context.write(new Text(actor), new Text(StringUtils.join(movieList, "|")));
 	    }
 	}
 	  static CharsetEncoder asciiEncoder = Charset.forName("US-ASCII").newEncoder(); // or "ISO-8859-1" for ISO Latin 1
