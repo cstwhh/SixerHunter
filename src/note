@@ -7,3 +7,19 @@ imdb现在下载貌似必须注册aws，没有境外信用卡呀 淘宝买了一
 计算了图的规模，predata表中电影数量/演员数量：4514592/1131471=3.9900200712170264,即每个演员的子节点有4个。
 inverted表中演员数量/电影数量:4323409/510396=8.470695303254727，即每个电影的子节点有8.5个。
 那么大概推算：每个演员的共同出演电影演员数量的3*8=24约为20。6度总规模是20^6-1=6400w演员数据，64M条演员数据。不过共同数量应该小于20.
+根据宽搜需要的数据，整理如下：
+
+map接受(数据源：数据)
+alldata:	<name,children>
+cachedata:	<name,children,distance,status,parent>
+
+map发送(数据源 <key,value>)
+alldata.sourcedata	组装成一条open数据，当做cachedata.open发送
+alldata.other		<name,children>
+cachedata.open		<child,name,distance,status,parent>
+cachedata.all		<name,children,distance,status,parent> open状态变成close状态
+
+reduce接受(数据源 value 操作)
+self.alldata	children									可能用于组成新的cachedata
+self.cachedata	children,distance,status,parent				写入已有的cachedata
+parent			parent's<children,distance,status,parent>	组成新的cachedata,但会一直收到source数据，因此还需要当前状态为unknown，状态变为open
