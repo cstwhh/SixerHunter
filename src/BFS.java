@@ -27,7 +27,7 @@ public class BFS {
 		}
 		String dataPath = remainingArgs[0]; 
 		String invertedDataPath = remainingArgs[1]; 
-		String cachePath = remainingArgs[2] + "openNode";
+		String cachePath = remainingArgs[2];
 		for(int i = 1;i < DEPTH; ++i) {
 	        Job bfs = Job.getInstance(conf, "BFS");
 	        bfs.setJarByClass(BFS.class);
@@ -145,7 +145,7 @@ public class BFS {
 			if(selfHasCached) {
 				context.write(key, new Text(children + "\t" + selfDistance + "\t" + selfStatus + "\t" + selfParent));
 			}
-			else {
+			else if(newCache) {
 				context.write(key, new Text(children + "\t" + parentsDistance + "\t" + "O" + "\t" + parentsParent));
 			}
 		}
