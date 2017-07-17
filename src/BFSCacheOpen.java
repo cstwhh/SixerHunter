@@ -19,7 +19,7 @@ import org.apache.hadoop.util.LineReader;
 // 只缓存open节点的全部数据，close节点只保留一个name
 public class BFSCacheOpen {
 	public final static int DEPTH = 12;
-//	public final static String source = "1";public final static String dest = "8";
+//	public final static String source = "1";public final static String dest = "80";
 //	public final static String source = "Bernardo, Alecia"; public final static String dest = "Boyer, Erica";
 	public final static String source = "Bernardo, Alecia"; public final static String dest = "Boyer, Ericdsadasa";
 	public final static boolean cacheAll = false; 

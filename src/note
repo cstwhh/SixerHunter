@@ -56,9 +56,7 @@ parent			parent's<distance parent>		组成新的cachedata,但会一直收到sour
 14830ms;13277ms;13274ms;13264ms;19532ms;13247ms;12378ms;13220ms;13259ms;11163ms;17245ms;12256ms; 
 15049ms;12283ms;14261ms;13317ms;18303ms;13241ms;13282ms;12241ms;13201ms;12221ms;18234ms;11295ms;
 14935ms;13274ms;13246ms;12237ms;19176ms;12322ms;13250ms;11225ms;13325ms;14229ms;18213ms;12161ms; 
-文件大小:
-69.6M
-
+文件大小:69.6M
 
 
 尝试通过DistribtionCacheFile读取open的数据点，但是必须保证数据点足够小。
@@ -79,11 +77,14 @@ cachedata.all			<name,value="<c>">（指定的一个特殊字符串，这个字�
 reduce接受(数据源 value 操作)
 self.alldata	children						可能用于组成新的cachedata
 self.close		"<c>"							写入已有的cachedata
-parent			parent's<distance parent>		组成新的cachedata,需要当前状态不是close。需要把新的open name写入opendata
+parent			parent's<distance parent>		组成新的cachedata,需要当前状态不是close。需要把children写入opendata
 
 Read 50380 lines, size: 29870;		8400ms; 
 Read 715353 lines, size: 193718;	22702ms; 
 Read 2551069 lines, size: 635339;	49713ms; 
+depth=6的时候没有错误，但是用时较长21407ms。应该设置成5
+depth=5:	7999ms;5532ms;5255ms;6251ms;7273ms; 
+depth=13:	6927ms;5541ms;5306ms;5255ms;6221ms;20204ms;32283ms;39317ms;32427ms;22268ms;21252ms;22171ms;23227ms;
 conf.set必须在Job.getInstance之前啊我的天!
 
 

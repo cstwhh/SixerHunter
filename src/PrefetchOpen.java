@@ -1,5 +1,4 @@
 import java.io.BufferedReader;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.net.URI;
@@ -28,12 +27,12 @@ import org.apache.hadoop.util.StringUtils;
 // 保存open的数据，alldata只发送open的数据。如果open数据通过setup设置性能反而下降，那么就不再保存open数据
 public class PrefetchOpen {
 	public final static int DEPTH = 13;
-//	public final static String source = "1";public final static String dest = "8";
+//	public final static String source = "1";public final static String dest = "18";
 //	public final static String source = "Bernardo, Alecia"; public final static String dest = "Boyer, Erica";
 	public final static String source = "Bernardo, Alecia"; public final static String dest = "Boyer, Ericdsadasa";
-	public final static boolean cacheAll = false; 
-//	public final static int MAX_CACHE_DEPTH = 6;
-	public final static int MAX_CACHE_DEPTH = 20;
+	public final static boolean cacheAll = true; 
+	public final static int MAX_CACHE_DEPTH = 5;
+//	public final static int MAX_CACHE_DEPTH = 20;
 	
 	public final static String resultFile = "result";
 	public final static String onlyOpenNodes = "onlyOpenNodes";
@@ -46,6 +45,7 @@ public class PrefetchOpen {
         conf.set("dest", dest);
         conf.set("resultFile", resultFile);
         conf.set("nodes", onlyOpenNodes);
+        conf.set("writenodes", onlyOpenNodes);
 		String[] remainingArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
 		if (remainingArgs.length != 3) {
 			System.err.println("Usage: PrefetchOpen <data> <inverted> <cachePath>");
@@ -62,6 +62,9 @@ public class PrefetchOpen {
 		String cachePath = remainingArgs[2];
 		for(int i = 1;i <= DEPTH; ++i) {
 			long startTime = System.currentTimeMillis();
+			if(i == MAX_CACHE_DEPTH) {
+		        conf.set("writenodes", allNodes);
+			}
     	    if(i > MAX_CACHE_DEPTH) {
     	        conf.set("nodes", allNodes);
     	    }
@@ -114,7 +117,7 @@ public class PrefetchOpen {
 	        bfs.waitForCompletion(true);
 	        long endTime = System.currentTimeMillis();
 			System.err.println("Depth: " + i + ", Time: " + (endTime - startTime) + "ms");
-	        System.out.println((endTime - startTime) + "ms;");
+	        System.out.print((endTime - startTime) + "ms;");
 		}
 	}
 	public static class PrefetchOpenMapper extends Mapper<LongWritable, Text, Text, Text> {
@@ -132,13 +135,15 @@ public class PrefetchOpen {
 		          String openNode = null;
 		          int lineCount = 0;
 		          while ((openNode = fis.readLine()) != null) {
-		        	  openNodes.add(openNode.replace("\t", ""));
+		        	  openNode = openNode.replace("\t", "");
+//		        	  if(openNode.equals("")) continue;
+		        	  openNodes.add(openNode);
 //		        	  System.out.println("addOpenNode: " + openNode.replace("\t", ""));
 		        	  ++ lineCount;
 		          }
 		          fis.close();
 //		          if(openNodes.size() > MAX_CACHE_SIZE) onlyOpenNodes = false;
-		          System.out.println("Read " + lineCount + " lines, size: " + openNodes.size());
+//		          System.out.println("Read " + lineCount + " lines, size: " + openNodes.size());
 //		          System.err.println("file: " + fileName + ", Read " + lineCount + " lines, size: " + openNodes.size() + ", openNodes: " + openNodes.toString());
 		          System.err.println("Read " + lineCount + " lines, size: " + openNodes.size());
 		        } catch (IOException ioe) {
@@ -154,11 +159,11 @@ public class PrefetchOpen {
 	    	  //  cachedata.open:	<name children distance parent>
 	          //  cachedata.close:	<name>
 //	    	System.out.println("Map receive: " + value.toString());
+//    	  	  if(value.toString().equals("")) return;
       	  	  String[] info = value.toString().split("\t");
     		  String name = info[0];
     		  // all data
     		  if(info.length == 2) {
-        		  String[] children = info[1].split("\\|");
     			  // alldata.source
     			  if(name.equals(context.getConfiguration().get("source"))) {
     				  // <name,distance parent>，fake自己是被父节点open的
@@ -211,8 +216,10 @@ public class PrefetchOpen {
         
 		@Override
 		public void reduce(Text key, Iterable<Text> values, Context context) throws IOException, InterruptedException {
+//			if(key.toString().equals("")) return;
 			// 来自self.alldata的数据
 			String children = "";
+			boolean hasChildren = false;
 			// 来自self.close的数据
 			boolean isClosed = false;
 			// 来自parent的数据
@@ -221,6 +228,7 @@ public class PrefetchOpen {
 			String parentsParent = "";
 			
 			for(Text value: values) {
+//				if(value.equals(""))	continue;
 //				System.out.println("reduce receive [" + key.toString() + "] " + value);
 				String[] info = value.toString().split("\t");
 				// self.close
@@ -230,6 +238,7 @@ public class PrefetchOpen {
 				// self.alldata
 				else if(info.length == 1) {
 					children = value.toString();
+					hasChildren = true;
 				}
 				// parent:parent's<distance,parent>
 				else if(info.length == 2 && !isClosed) {
@@ -263,12 +272,15 @@ public class PrefetchOpen {
 	        	    fout.close();
 					return;
 				}
-				context.write(key, new Text(children + "\t" + parentsDistance + "\t" + parentsParent));
-
-				if(context.getConfiguration().get("nodes").equals(onlyOpenNodes)) {
-//					System.out.println("Reduce: OnlyOpenNodes " + key.toString());
-					for(String child: children.split("\\|")) {
-						mo.write("opendata", new Text(child), new Text(""));
+				if(hasChildren) {
+					context.write(key, new Text(children + "\t" + parentsDistance + "\t" + parentsParent));
+	
+					if(context.getConfiguration().get("writenodes").equals(onlyOpenNodes)) {
+	//					System.out.println("Reduce: OnlyOpenNodes " + key.toString());
+						for(String child: children.split("\\|")) {
+	//						if(child.length() ==0) continue;
+							mo.write("opendata", new Text(child), new Text(""));
+						}
 					}
 				}
 			}
