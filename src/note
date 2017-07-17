@@ -71,7 +71,8 @@ alldata:			<name,children>
 cachedata.open:		<name,children distance parent>
 cachedata.close:	<name>
 map发送(数据源 <key,value>)
-alldata.sourcedata	组装成一条open数据，当做cachedata.open发送
+// alldata.sourcedata		组装成一条open数据，当做cachedata.open发送,不能发送cachedata.all数据，必须发送自己<name,children>
+alldata.sourcedata		<name,distance parent>，fake自己是被父节点open的
 alldata.other&inopen	<name,children>
 cachedata.open			<child,distance parent> parent加上自己
 cachedata.all			<name,value="<c>">（指定的一个特殊字符串，这个字符串不会再其他数据中出现）
@@ -80,6 +81,10 @@ self.alldata	children						可能用于组成新的cachedata
 self.close		"<c>"							写入已有的cachedata
 parent			parent's<distance parent>		组成新的cachedata,需要当前状态不是close。需要把新的open name写入opendata
 
+Read 50380 lines, size: 29870;		8400ms; 
+Read 715353 lines, size: 193718;	22702ms; 
+Read 2551069 lines, size: 635339;	49713ms; 
+conf.set必须在Job.getInstance之前啊我的天!
 
 
 TODO:优化输入，使输入不再那么严格
