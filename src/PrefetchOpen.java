@@ -12,6 +12,7 @@ import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.input.MultipleInputs;
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+import org.apache.hadoop.mapreduce.lib.output.MultipleOutputs;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.apache.hadoop.util.GenericOptionsParser;
 import org.apache.hadoop.util.LineReader;
@@ -19,9 +20,9 @@ import org.apache.hadoop.util.LineReader;
 // 保存open的数据，alldata只发送open的数据。如果open数据通过setup设置性能反而下降，那么就不再保存open数据
 public class PrefetchOpen {
 	public final static int DEPTH = 12;
-//	public final static String source = "1";public final static String dest = "8";
+	public final static String source = "1";public final static String dest = "8";
 //	public final static String source = "Bernardo, Alecia"; public final static String dest = "Boyer, Erica";
-	public final static String source = "Bernardo, Alecia"; public final static String dest = "Boyer, Ericdsadasa";
+//	public final static String source = "Bernardo, Alecia"; public final static String dest = "Boyer, Ericdsadasa";
 	public final static boolean cacheAll = false; 
 	
 	public final static String resultFile = "result";
@@ -68,8 +69,8 @@ public class PrefetchOpen {
 	        MultipleInputs.addInputPath(bfs, new Path(invertedDataPath), TextInputFormat.class,
 	        		PrefetchOpenMapper.class);
 	        if(i != 1) {
-		        if(cacheAll) MultipleInputs.addInputPath(bfs, new Path(cachePath + (i-1) + "/"), TextInputFormat.class,PrefetchOpenMapper.class); 
-		        else MultipleInputs.addInputPath(bfs, new Path(cachePath + ((i-1)%2) + "/"), TextInputFormat.class,PrefetchOpenMapper.class);
+		        if(cacheAll) MultipleInputs.addInputPath(bfs, new Path(cachePath + (i-1) + "/part-r-00000"), TextInputFormat.class,PrefetchOpenMapper.class); 
+		        else MultipleInputs.addInputPath(bfs, new Path(cachePath + ((i-1)%2) + "/part-r-00000"), TextInputFormat.class,PrefetchOpenMapper.class);
 		        
 	        }
 	        bfs.setMapOutputKeyClass(Text.class);
@@ -82,7 +83,8 @@ public class PrefetchOpen {
 	        if (fileSystem.exists(path)) {  
 	            fileSystem.delete(path, true);
 	        }  
-	        
+//	        MultipleOutputs.addNamedOutput(bfs, "cachedata", TextOutputFormat.class, Text.class, Text.class);
+	        MultipleOutputs.addNamedOutput(bfs, "opendata",   TextOutputFormat.class, Text.class, Text.class);
 	        FileOutputFormat.setOutputPath(bfs, new Path(outputPath));
 	        bfs.setOutputFormatClass(TextOutputFormat.class);
 	        bfs.setOutputKeyClass(Text.class);
@@ -142,6 +144,14 @@ public class PrefetchOpen {
 	    }
 	}
 	public static class PrefetchOpenReducer extends Reducer<Text,Text,Text,Text> {
+		private MultipleOutputs<Text, Text> mo;
+        @Override
+        protected void setup(Context context) throws IOException,
+        InterruptedException {
+            mo = new MultipleOutputs<Text, Text>(context);
+            super.setup(context);
+        }
+        
 		@Override
 		public void reduce(Text key, Iterable<Text> values, Context context) throws IOException, InterruptedException {
 			// 来自self.alldata的数据
@@ -197,6 +207,12 @@ public class PrefetchOpen {
 				}
 				context.write(key, new Text(children + "\t" + parentsDistance + "\t" + parentsParent));
 			}
+			mo.write("opendata",new Text("test"), new Text(""));
 		}
+        @Override
+        protected void cleanup(Context context) throws IOException,InterruptedException{
+            mo.close();
+            super.cleanup(context);
+        }
 	}
 }
