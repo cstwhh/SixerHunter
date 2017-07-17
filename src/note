@@ -3,7 +3,7 @@ title.principals.tsv.gz数据集貌似是可以使用的。如果扩展需要可
 imdb现在下载貌似必须注册aws，没有境外信用卡呀 淘宝买了一个但是卖家不发货 暂时找到一个镜像 ftp://ftp.funet.fi/pub/mirrors/ftp.imdb.com/pub/temporaryaccess/
 注意gedit不能解决但是sublime没有问题的编码问题
 使用trim.py脚本trim数据，每一行是一个演员。然后使用Proprocess进一步处理，每个演员出演电影使用"|"隔开，注意是含有空格的
-建立电影到演员的倒排表之后，共有701579个电影，进一步的，如果一个电影只有一个演员出演，那么可以直接去掉这部电影,处理之后共510396个电影。同样的，如果演员参演电影为0可以直接去掉，去掉之后共96w左右电影。如果对倒排表再进行一次倒排，则可以去掉所有死链接的节点，以后考虑做。
+建立电影到演员的倒排表之后，共有701579个电影，进一步的，如果一个电影只有一个演员出演，那么可以直接去掉这部电影,处理之后共510396个电影。同样的，如果演员参演电影为0可以直接去掉，去掉之后共96w左右演员。如果对倒排表再进行一次倒排，则可以去掉所有死链接的节点，以后考虑做。
 计算了图的规模，predata表中电影数量/演员数量：4514592/1131471=3.9900200712170264,即每个演员的子节点有4个。
 inverted表中演员数量/电影数量:4323409/510396=8.470695303254727，即每个电影的子节点有8.5个。
 那么大概推算：每个演员的共同出演电影演员数量的3*8=24约为20。6度总规模是20^6-1=6400w演员数据，64M条演员数据。不过共同数量应该小于20.
@@ -27,3 +27,31 @@ parent			parent's<distance,parent>		组成新的cachedata,但会一直收到sour
 其中source一直发送数据是为了启动搜索过程，source和dest使用参数进行传递。
 reduce和driver之间通过参数传递信息，driver发送dest,reduce发送搜索到的路径，""表示空
 但是好像reduce和map都无法接受修改config，只能考虑通过写入文件的方式传递结果
+
+优化
+7/16 20:38
+首先可以去掉status信息，cachedata中，只有opendata保存的数据是<name,children,distance,status,parent>,其余的只保存<name>
+重新设计协议
+map接受(数据源：数据)
+alldata:			<name,children>
+cachedata.open:		<name,children distance parent>
+cachedata.close:	<name>
+map发送(数据源 <key,value>)
+alldata.sourcedata	组装成一条open数据，当做cachedata.open发送
+alldata.all			<name,children>
+cachedata.open		<child,distance parent> parent加上自己
+cachedata.all		<name,value="<c>">（指定的一个特殊字符串，这个字符串不会再其他数据中出现）
+reduce接受(数据源 value 操作)
+self.alldata	children						可能用于组成新的cachedata
+self.close		"<c>"							写入已有的cachedata
+parent			parent's<distance parent>		组成新的cachedata,但会一直收到source数据，因此还需要当前状态为unknown，状态变为open
+
+首先观察原输出，得到时间消耗：
+12928ms;13257ms;12233ms;13243ms;14317ms;19229ms;31282ms;42274ms;29474ms;33563ms;29392ms;27507ms;
+最后两轮的文件大小分别是：385M,387M
+
+
+尝试通过cachefile读取下一步需要发送alldata.all数据的点，但是必须保证数据点足够小。首先运行一个跑12层的数据，查看cache大小
+如果数据点已经太大了，就不再读取了，直接发送所有数据。
+TODO:优化输入，使输入不再那么严格
+http://hadooptutorial.info/mapreduce-multiple-outputs-use-case/给出了一些运行时空间参数设置

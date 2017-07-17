@@ -16,8 +16,8 @@ import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.apache.hadoop.util.GenericOptionsParser;
 import org.apache.hadoop.util.LineReader;
 
-// 第一个能够正确运行的版本
-public class BFS {
+// 只缓存open节点的全部数据，close节点只保留一个name
+public class BFSCacheOpen {
 	public final static int DEPTH = 12;
 //	public final static String source = "1";
 //	public final static String dest = "10";
