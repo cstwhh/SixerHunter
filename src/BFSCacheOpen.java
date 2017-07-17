@@ -20,8 +20,8 @@ import org.apache.hadoop.util.LineReader;
 public class BFSCacheOpen {
 	public final static int DEPTH = 12;
 //	public final static String source = "1";public final static String dest = "8";
-	public final static String source = "Bernardo, Alecia"; public final static String dest = "Boyer, Erica";
-//	public final static String source = "Bernardo, Alecia"; public final static String dest = "Boyer, Ericdsadasa";
+//	public final static String source = "Bernardo, Alecia"; public final static String dest = "Boyer, Erica";
+	public final static String source = "Bernardo, Alecia"; public final static String dest = "Boyer, Ericdsadasa";
 	public final static boolean cacheAll = false; 
 	
 	public final static String resultFile = "result";
@@ -47,8 +47,8 @@ public class BFSCacheOpen {
 		String cachePath = remainingArgs[2];
 		for(int i = 1;i <= DEPTH; ++i) {
 			long startTime = System.currentTimeMillis();
-	        Job bfs = Job.getInstance(conf, "BFS");
-	        bfs.setJarByClass(BFS.class);
+	        Job bfs = Job.getInstance(conf, "BFSCaheOpen");
+	        bfs.setJarByClass(BFSCacheOpen.class);
 	        // 已经写入结果了，则可以退出
         	if (fs.exists(resultPath)) {
         	    FSDataInputStream fin = fs.open(resultPath);
@@ -64,12 +64,12 @@ public class BFSCacheOpen {
 
     	    
 	        MultipleInputs.addInputPath(bfs, new Path(dataPath), TextInputFormat.class,
-	        		BFSMapper.class);
+	        		BFSCacheOpenMapper.class);
 	        MultipleInputs.addInputPath(bfs, new Path(invertedDataPath), TextInputFormat.class,
-	        		BFSMapper.class);
+	        		BFSCacheOpenMapper.class);
 	        if(i != 1) {
-		        if(cacheAll) MultipleInputs.addInputPath(bfs, new Path(cachePath + (i-1) + "/"), TextInputFormat.class,BFSMapper.class); 
-		        else MultipleInputs.addInputPath(bfs, new Path(cachePath + ((i-1)%2) + "/"), TextInputFormat.class,BFSMapper.class);
+		        if(cacheAll) MultipleInputs.addInputPath(bfs, new Path(cachePath + (i-1) + "/"), TextInputFormat.class,BFSCacheOpenMapper.class); 
+		        else MultipleInputs.addInputPath(bfs, new Path(cachePath + ((i-1)%2) + "/"), TextInputFormat.class,BFSCacheOpenMapper.class);
 		        
 	        }
 	        bfs.setMapOutputKeyClass(Text.class);
@@ -87,14 +87,14 @@ public class BFSCacheOpen {
 	        bfs.setOutputFormatClass(TextOutputFormat.class);
 	        bfs.setOutputKeyClass(Text.class);
 	        bfs.setOutputValueClass(Text.class);
-	        bfs.setReducerClass(BFSReducer.class);
+	        bfs.setReducerClass(BFSCacheOpenReducer.class);
 	        bfs.waitForCompletion(true);
 	        long endTime = System.currentTimeMillis();
 			System.err.println("Depth: " + i + ", Time: " + (endTime - startTime) + "ms");
 	        System.out.print((endTime - startTime) + "ms;");
 		}
 	}
-	public static class BFSMapper extends Mapper<LongWritable, Text, Text, Text> {
+	public static class BFSCacheOpenMapper extends Mapper<LongWritable, Text, Text, Text> {
 	    @Override
 	    public void map(LongWritable key, Text value, Context context)
 	          throws IOException, InterruptedException {
@@ -141,7 +141,7 @@ public class BFSCacheOpen {
     		  
 	    }
 	}
-	public static class BFSReducer extends Reducer<Text,Text,Text,Text> {
+	public static class BFSCacheOpenReducer extends Reducer<Text,Text,Text,Text> {
 		@Override
 		public void reduce(Text key, Iterable<Text> values, Context context) throws IOException, InterruptedException {
 			// 来自self.alldata的数据

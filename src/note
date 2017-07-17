@@ -46,9 +46,10 @@ self.alldata	children						可能用于组成新的cachedata
 self.close		"<c>"							写入已有的cachedata
 parent			parent's<distance parent>		组成新的cachedata,但会一直收到source数据，因此还需要当前状态为unknown，状态变为open
 
-首先观察原输出，得到时间消耗(两次)：
+首先观察原输出，得到时间消耗(3次)：
 12928ms;13257ms;12233ms;13243ms;14317ms;19229ms;31282ms;42274ms;29474ms;33563ms;29392ms;27507ms;
 12952ms;13403ms;13278ms;12254ms;12177ms;18221ms;29260ms;42803ms;29289ms;38331ms;29564ms;29464ms;
+15022ms;13463ms;11262ms;14198ms;14244ms;19286ms;29267ms;41313ms;32321ms;31518ms;28290ms;29531ms; 
 最后两轮的文件大小是(两次)：
 385M,387M
 385M,387M
