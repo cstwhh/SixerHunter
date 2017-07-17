@@ -28,7 +28,7 @@ parent			parent's<distance,parent>		组成新的cachedata,但会一直收到sour
 reduce和driver之间通过参数传递信息，driver发送dest,reduce发送搜索到的路径，""表示空
 但是好像reduce和map都无法接受修改config，只能考虑通过写入文件的方式传递结果
 
-优化
+
 7/16 20:38
 首先可以去掉status信息，cachedata中，只有opendata保存的数据是<name,children,distance,status,parent>,其余的只保存<name>
 重新设计协议
@@ -38,7 +38,7 @@ cachedata.open:		<name,children distance parent>
 cachedata.close:	<name>
 map发送(数据源 <key,value>)
 alldata.sourcedata	组装成一条open数据，当做cachedata.open发送
-alldata.all			<name,children>
+alldata.other		<name,children>
 cachedata.open		<child,distance parent> parent加上自己
 cachedata.all		<name,value="<c>">（指定的一个特殊字符串，这个字符串不会再其他数据中出现）
 reduce接受(数据源 value 操作)
@@ -46,9 +46,14 @@ self.alldata	children						可能用于组成新的cachedata
 self.close		"<c>"							写入已有的cachedata
 parent			parent's<distance parent>		组成新的cachedata,但会一直收到source数据，因此还需要当前状态为unknown，状态变为open
 
-首先观察原输出，得到时间消耗：
+首先观察原输出，得到时间消耗(两次)：
 12928ms;13257ms;12233ms;13243ms;14317ms;19229ms;31282ms;42274ms;29474ms;33563ms;29392ms;27507ms;
-最后两轮的文件大小分别是：385M,387M
+12952ms;13403ms;13278ms;12254ms;12177ms;18221ms;29260ms;42803ms;29289ms;38331ms;29564ms;29464ms;
+最后两轮的文件大小是(两次)：
+385M,387M
+385M,387M
+
+
 
 
 尝试通过cachefile读取下一步需要发送alldata.all数据的点，但是必须保证数据点足够小。首先运行一个跑12层的数据，查看cache大小
