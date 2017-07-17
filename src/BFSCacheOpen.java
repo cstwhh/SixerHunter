@@ -33,7 +33,7 @@ public class BFSCacheOpen {
         conf.set("resultFile", resultFile);
 		String[] remainingArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
 		if (remainingArgs.length != 3) {
-			System.err.println("Usage: BFS <data> <inverted> <cachePath>");
+			System.err.println("Usage: BFSCacheOpen <data> <inverted> <cachePath>");
 			System.exit(2);
 		}
 

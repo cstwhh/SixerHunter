@@ -46,18 +46,41 @@ self.alldata	children						可能用于组成新的cachedata
 self.close		"<c>"							写入已有的cachedata
 parent			parent's<distance parent>		组成新的cachedata,但会一直收到source数据，因此还需要当前状态为unknown，状态变为open
 
-首先观察原输出，得到时间消耗(3次)：
+首先观察原输出，得到时间消耗(多次)：
 12928ms;13257ms;12233ms;13243ms;14317ms;19229ms;31282ms;42274ms;29474ms;33563ms;29392ms;27507ms;
 12952ms;13403ms;13278ms;12254ms;12177ms;18221ms;29260ms;42803ms;29289ms;38331ms;29564ms;29464ms;
 15022ms;13463ms;11262ms;14198ms;14244ms;19286ms;29267ms;41313ms;32321ms;31518ms;28290ms;29531ms; 
-最后两轮的文件大小是(两次)：
+最后两轮的文件大小是(多次)：
 385M,387M
-385M,387M
+更新之后的输出，时间消耗:
+14830ms;13277ms;13274ms;13264ms;19532ms;13247ms;12378ms;13220ms;13259ms;11163ms;17245ms;12256ms; 
+15049ms;12283ms;14261ms;13317ms;18303ms;13241ms;13282ms;12241ms;13201ms;12221ms;18234ms;11295ms;
+14935ms;13274ms;13246ms;12237ms;19176ms;12322ms;13250ms;11225ms;13325ms;14229ms;18213ms;12161ms; 
+文件大小:
+69.6M
 
 
 
+尝试通过DistribtionCacheFile读取open的数据点，但是必须保证数据点足够小。
+如果数据点已经太大了没办法读取，就不再读取了，直接发送所有数据。
+第11次迭代需要open数据有200000条,总的数据规模大概
+如果预读open数据，重新设计协议
+map接受(数据源：数据)
+opendata			setup的时候读取文件，每个数据一行，全是open数据的name
+alldata:			<name,children>
+cachedata.open:		<name,children distance parent>
+cachedata.close:	<name>
+map发送(数据源 <key,value>)
+alldata.sourcedata	组装成一条open数据，当做cachedata.open发送
+alldata.other&inopen	<name,children>
+cachedata.open			<child,distance parent> parent加上自己
+cachedata.all			<name,value="<c>">（指定的一个特殊字符串，这个字符串不会再其他数据中出现）
+reduce接受(数据源 value 操作)
+self.alldata	children						可能用于组成新的cachedata
+self.close		"<c>"							写入已有的cachedata
+parent			parent's<distance parent>		组成新的cachedata,需要当前状态不是close。需要把新的open name写入opendata
 
-尝试通过cachefile读取下一步需要发送alldata.all数据的点，但是必须保证数据点足够小。首先运行一个跑12层的数据，查看cache大小
-如果数据点已经太大了，就不再读取了，直接发送所有数据。
+
+
 TODO:优化输入，使输入不再那么严格
 http://hadooptutorial.info/mapreduce-multiple-outputs-use-case/给出了一些运行时空间参数设置
