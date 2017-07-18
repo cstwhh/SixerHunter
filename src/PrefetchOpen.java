@@ -27,9 +27,11 @@ import org.apache.hadoop.util.StringUtils;
 // 保存open的数据，alldata只发送open的数据。如果open数据通过setup设置性能反而下降，那么就不再保存open数据
 public class PrefetchOpen {
 	public final static int DEPTH = 13;
-//	public final static String source = "1";public final static String dest = "18";
-	public final static String source = "Bernardo, Alecia"; public final static String dest = "Boyer, Erica";
-//	public final static String source = "Bernardo, Alecia"; public final static String dest = "Boyer, Ericdsadasa";
+//	public final static String source = "1";public final static String dest = "8";
+//	public final static String source = "Bernardo, Alecia"; public final static String dest = "Boyer, Erica"; //5
+//	public final static String source = "Bernardo, Alecia"; public final static String dest = "Dickson, Ronnie"; //7
+//	public final static String source = "Johansson, Scarlett"; public final static String dest = "Blanchett, Cate";
+	public final static String source = "Bernardo, Alecia"; public final static String dest = "Boyer, Ericdsadasa"; //13
 	public final static boolean cacheAll = true; 
 	public final static int MAX_CACHE_DEPTH = 5;
 //	public final static int MAX_CACHE_DEPTH = 20;
@@ -94,10 +96,13 @@ public class PrefetchOpen {
 			        }
 		        }
 	        }
-	        MultipleInputs.addInputPath(bfs, new Path(dataPath), TextInputFormat.class,
-	        		PrefetchOpenMapper.class);
-	        MultipleInputs.addInputPath(bfs, new Path(invertedDataPath), TextInputFormat.class,
-	        		PrefetchOpenMapper.class);
+	        if(i % 2 ==1) {
+	        	// 演员表
+	        	MultipleInputs.addInputPath(bfs, new Path(dataPath), TextInputFormat.class,PrefetchOpenMapper.class);
+	        }
+	        else {
+	        	MultipleInputs.addInputPath(bfs, new Path(invertedDataPath), TextInputFormat.class,PrefetchOpenMapper.class);
+	        }
 	        bfs.setMapOutputKeyClass(Text.class);
 	        
 	        String outputPath;

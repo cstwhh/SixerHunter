@@ -22,7 +22,7 @@ public class BFSCacheOpen {
 //	public final static String source = "1";public final static String dest = "80";
 //	public final static String source = "Bernardo, Alecia"; public final static String dest = "Boyer, Erica";
 	public final static String source = "Bernardo, Alecia"; public final static String dest = "Boyer, Ericdsadasa";
-	public final static boolean cacheAll = false; 
+	public final static boolean cacheAll = true; 
 	
 	public final static String resultFile = "result";
 	public static void main(String[] args) throws Exception {		

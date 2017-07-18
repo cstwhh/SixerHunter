@@ -16,6 +16,7 @@ import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.apache.hadoop.util.GenericOptionsParser;
 import org.apache.hadoop.util.LineReader;
 
+
 // 第一个能够正确运行的版本
 public class BFS {
 	public final static int DEPTH = 12;
@@ -24,6 +25,7 @@ public class BFS {
 	public final static String source = "Bernardo, Alecia";
 //	public final static String dest = "Boyer, Erica";
 	public final static String dest = "Boyer, Ericdsadasa";
+	public final static boolean cacheAll = false; 
 	public final static String resultFile = "result";
 	public static void main(String[] args) throws Exception {		
 		
@@ -68,12 +70,14 @@ public class BFS {
 	        MultipleInputs.addInputPath(bfs, new Path(invertedDataPath), TextInputFormat.class,
 	        		BFSMapper.class);
 	        if(i != 1) {
-		        MultipleInputs.addInputPath(bfs, new Path(cachePath + ((i-1)%2) + "/"), TextInputFormat.class,
-		        		BFSMapper.class);
+		        if(cacheAll) MultipleInputs.addInputPath(bfs, new Path(cachePath + (i-1) + "/"), TextInputFormat.class,BFSMapper.class); 
+		        else MultipleInputs.addInputPath(bfs, new Path(cachePath + ((i-1)%2) + "/"), TextInputFormat.class,BFSMapper.class);
 	        }
 	        bfs.setMapOutputKeyClass(Text.class);
 	        
-	        String outputPath = cachePath + (i%2) + "/";
+	        String outputPath;
+	        if(cacheAll) outputPath = cachePath + i + "/";
+	        else outputPath = cachePath + (i%2) + "/";
 	        Path path = new Path(outputPath);
 	        FileSystem fileSystem = path.getFileSystem(conf);
 	        if (fileSystem.exists(path)) {  

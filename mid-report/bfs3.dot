@@ -1,0 +1,21 @@
+digraph G {
+		A1->M1[arrowhead="none"];
+		A1->M2[arrowhead="none"];
+		M1->actor11[arrowhead="none"];
+		M1->actor12[arrowhead="none"];
+		M2->actor21[arrowhead="none"];
+		M2->actor22[arrowhead="none"];
+		actor11[label="A2"];
+		actor12[label="A3"];
+		actor21[label="A4"];
+		actor22[label="A5"];
+		actor11->M3[arrowhead="none"];
+		actor21->M3[arrowhead="none"];
+		A1[fillcolor="#2f2f2f", style=filled];
+		M1[fillcolor="#2f2f2f", style=filled];
+		M2[fillcolor="#2f2f2f", style=filled];
+		actor11[fillcolor=gray, style=filled];
+		actor12[fillcolor=gray, style=filled];
+		actor21[fillcolor=gray, style=filled];
+		actor22[fillcolor=gray, style=filled];
+}
