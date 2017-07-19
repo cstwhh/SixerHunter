@@ -1,30 +1,32 @@
+---
+title: 基于六度理论的演员关系搜索
+date: 2017-07-19
+author:
+- 吴行行
+- 朱雨
+fontsize: 12pt
+---
+
+
 # 数据集
 
-数据集是上映电影和演员数据，共有70万部电影，96万位演员。首先进行预处理和统计，将原数据集处理成“演员+出演电影列表”和“电影+演员列表”两个数据文件。统计得到平均每个演员出演3.99部电影，每个电影平均有8.5个演员。
+数据集是上映电影和演员数据，共有70万部电影，96万位演员。
+首先进行预处理和统计，将原数据集处理成“演员+出演电影列表”和“电影+演员列表”两个数据文件。统计得到平均每个演员出演3.99部电影，每个电影平均有8.5个演员。
 
 # 算法
 
-![model](./model.png)
+![model](fig/model.png){#fig:model width=35% height=250px}
 
-上图是算法采用的模型，其中A表示演员，M表示电影，演员出演电影则两个节点存在一条边。所有数据构成一个无向有环图，问题转化成在图中查找两个A节点之间的路径。
+图[-@fig:model]是算法采用的模型，其中A表示演员，M表示电影，演员出演电影则两个节点存在一条边。所有数据构成一个无向有环图，问题转化成在图中查找两个A节点之间的路径。采用Breadth-First-Search算法。
 
-Breadth-First-Search算法伪代码:
+<div id="fig:BFS">
+![bfs:1](fig/bfs1.png){#fig:bfs1 width=33% height=150px}
+![bfs:2](fig/bfs2.png){#fig:bfs2 width=33% height=150px}
+![bfs:3](fig/bfs3.png){#fig:bfs3 width=33% height=150px}
 
-```python
-open=[source] close=[]
-while(not found dest)
-for s in open:
-    open.add(s的后继节点sn,且sn不在close中)
-    close.add(s)
-end
-```
-
+BFS
+</div>
 灰色点表示open点，黑色点表示close点，白色点表示unknown点。
-
-![bfs1](./bfs1.png)
-![bfs2](./bfs2.png)
-![bfs3](./bfs3.png)
-
 循环进行下去，直到发现目标节点，或者遍历深度达到上限值(6*2+1=13)。
 
 # Hadoop实现
@@ -68,4 +70,10 @@ Map阶段所有节点都需要发送\<name,children\>数据，但是Reduce中只
 当然CacheFile文件不能太大，否则会heap溢出并且查询时间过长，这里取深度为6以上的时候就不再使用CacheFile，而是采用原来的办法发送所有数据。
 
 # 结果
+<div id="fig:result">
+![time](fig/time.png){#fig:time  height=250px}
 
+![memory](fig/memory.png){#fig:mem height=250px}
+
+时间开销和空间开销
+</div>

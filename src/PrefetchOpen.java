@@ -2,9 +2,13 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FSDataOutputStream;
@@ -22,17 +26,16 @@ import org.apache.hadoop.mapreduce.lib.output.MultipleOutputs;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.apache.hadoop.util.GenericOptionsParser;
 import org.apache.hadoop.util.LineReader;
-import org.apache.hadoop.util.StringUtils;
 
 // 保存open的数据，alldata只发送open的数据。如果open数据通过setup设置性能反而下降，那么就不再保存open数据
 public class PrefetchOpen {
 	public final static int DEPTH = 13;
 //	public final static String source = "1";public final static String dest = "8";
-//	public final static String source = "Bernardo, Alecia"; public final static String dest = "Boyer, Erica"; //5
+	public final static String source = "Bernardo, Alecia"; public final static String dest = "Boyer, Erica"; //5
 //	public final static String source = "Bernardo, Alecia"; public final static String dest = "Dickson, Ronnie"; //7
 //	public final static String source = "Johansson, Scarlett"; public final static String dest = "Blanchett, Cate";
-	public final static String source = "Bernardo, Alecia"; public final static String dest = "Boyer, Ericdsadasa"; //13
-	public final static boolean cacheAll = true; 
+//	public final static String source = "Bernardo, Alecia"; public final static String dest = "Boyer, Ericdsadasa"; //13
+	public final static boolean cacheAll = false; 
 	public final static int MAX_CACHE_DEPTH = 5;
 //	public final static int MAX_CACHE_DEPTH = 20;
 	
@@ -78,7 +81,14 @@ public class PrefetchOpen {
         	    Text line = new Text();
         	    LineReader reader = new LineReader(fin);
         	    if(reader.readLine(line) > 0) {
-        	    	System.err.println("result: " + line);
+        	    	String[] results = line.toString().split("\\|");
+        	    	if(results.length < 1) System.exit(1);;
+        	    	List<String> list = new ArrayList<String>();  
+        	    	for(int s = 1; s < results.length; ++s) {
+        	    		list.add(results[s]);
+        	    	}
+        	    	System.err.println("result: " + StringUtils.join(list.toArray(), ","));
+//        	    	System.err.println("result: " + line);
         	    	System.exit(0);
         	    } 
         	    reader.close();
@@ -155,8 +165,7 @@ public class PrefetchOpen {
 //		          System.err.println("file: " + fileName + ", Read " + lineCount + " lines, size: " + openNodes.size() + ", openNodes: " + openNodes.toString());
 		          System.err.println("Read " + lineCount + " lines, size: " + openNodes.size());
 		        } catch (IOException ioe) {
-		          System.err.println("Caught exception while parsing the cached file '"
-		              + StringUtils.stringifyException(ioe));
+		          System.err.println("Caught exception while parsing the cached file");
 		        }
 	        }
 	    }
