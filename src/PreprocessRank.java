@@ -15,24 +15,24 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.apache.hadoop.util.GenericOptionsParser;
 
-public class Preprocess {
+public class PreprocessRank {
 	public static void main(String[] args) throws Exception {		
 		
 		Configuration conf = new Configuration();
 		String[] remainingArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
 		if (remainingArgs.length != 2) {
-			System.err.println("Usage: Preprocess <in> <out>");
+			System.err.println("Usage: PreprocessRank <in> <out>");
 			System.exit(2);
 		}
 		String inputPath = remainingArgs[0]; String outputPath = remainingArgs[1];
 
-        Job preprocess = Job.getInstance(conf, "Preprocess");
-        preprocess.setJarByClass(Preprocess.class);
+        Job preprocess = Job.getInstance(conf, "PreprocessRank");
+        preprocess.setJarByClass(PreprocessRank.class);
 
         // Input / Mapper
         FileInputFormat.addInputPath(preprocess, new Path(inputPath));
         preprocess.setMapOutputKeyClass(Text.class);
-        preprocess.setMapperClass(PreprocessMapper.class);
+        preprocess.setMapperClass(PreprocessRankMapper.class);
 
         // Output / Reducer
         // 判断output文件夹是否存在，如果存在则删除  
@@ -50,7 +50,8 @@ public class Preprocess {
 
         System.exit(preprocess.waitForCompletion(true) ? 0 : 1);
 	}
-	public static class PreprocessMapper extends Mapper<LongWritable, Text, Text, Text> {
+	public static class PreprocessRankMapper extends Mapper<LongWritable, Text, Text, Text> {
+	    private static final String rankPattern = "  <\\d*?>";
 	    @Override
 	    public void map(LongWritable key, Text value, Context context)
 	          throws IOException, InterruptedException {
@@ -60,10 +61,16 @@ public class Preprocess {
     		  if(! isPureAscii(actor)) return;
     		  if(actor.contains("|")) {System.err.println("actor[" + actor + "] contains |");System.exit(1);}
     		  TreeSet<String> movies = new TreeSet<String>();
+    		  TreeSet<String> moviesName = new TreeSet<String>();
     		  for(int i = 1; i < info.length; ++i) {
     			  if(info[i].equals("") || (!isPureAscii(info[i]))) continue;
         		  if(info[i].contains("|")) {System.err.println("movie[" + actor + "] contains |");System.exit(1);}
-    			  movies.add(info[i]);
+        		  String name = info[i].replaceAll(rankPattern, "");
+//        		  System.out.println("info[i]: " + info[i] + ", name: " + name);
+        		  if(!moviesName.contains(name)) {
+        			  moviesName.add(name);
+        			  movies.add(info[i]);
+        		  }
     		  }
     		  if(movies.size() < 1) return;
     		  String[] movieList = new String[movies.size()];

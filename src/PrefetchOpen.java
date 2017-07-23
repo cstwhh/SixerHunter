@@ -3,7 +3,6 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -31,9 +30,9 @@ import org.apache.hadoop.util.LineReader;
 public class PrefetchOpen {
 	public final static int DEPTH = 13;
 //	public final static String source = "1";public final static String dest = "8";
-	public final static String source = "Bernardo, Alecia"; public final static String dest = "Boyer, Erica"; //5
+//	public final static String source = "Bernardo, Alecia"; public final static String dest = "Boyer, Erica"; //5
 //	public final static String source = "Bernardo, Alecia"; public final static String dest = "Dickson, Ronnie"; //7
-//	public final static String source = "Johansson, Scarlett"; public final static String dest = "Blanchett, Cate";
+	public static String source = "Johansson, Scarlett"; public static String dest = "Blanchett, Cate";
 //	public final static String source = "Bernardo, Alecia"; public final static String dest = "Boyer, Ericdsadasa"; //13
 	public final static boolean cacheAll = false; 
 	public final static int MAX_CACHE_DEPTH = 5;
@@ -46,17 +45,21 @@ public class PrefetchOpen {
 //	public static boolean onlyOpenNodes = true;
 	public static void main(String[] args) throws Exception {		
 		Configuration conf = new Configuration();
+		String[] remainingArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
+//		for(String arg: remainingArgs) System.err.println(arg);
+		if (remainingArgs.length != 3 && remainingArgs.length != 5) {
+			System.err.println("Usage: PrefetchOpen <data> <inverted> <cachePath> (actor1, actor2)");
+			System.exit(2);
+		}
+		if(remainingArgs.length == 5) {
+			source = remainingArgs[3];
+			dest = remainingArgs[4];
+		}
         conf.set("source", source);
         conf.set("dest", dest);
         conf.set("resultFile", resultFile);
         conf.set("nodes", onlyOpenNodes);
         conf.set("writenodes", onlyOpenNodes);
-		String[] remainingArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
-		if (remainingArgs.length != 3) {
-			System.err.println("Usage: PrefetchOpen <data> <inverted> <cachePath>");
-			System.exit(2);
-		}
-
     	FileSystem fs = FileSystem.get(conf); 
     	Path resultPath = new Path(resultFile);  
     	if (fs.exists(resultPath)) {
@@ -88,6 +91,7 @@ public class PrefetchOpen {
         	    		list.add(results[s]);
         	    	}
         	    	System.err.println("result: " + StringUtils.join(list.toArray(), ","));
+        	    	System.out.println(source + "\t" + dest + "\t" + StringUtils.join(list.toArray(), ","));
 //        	    	System.err.println("result: " + line);
         	    	System.exit(0);
         	    } 
@@ -132,8 +136,9 @@ public class PrefetchOpen {
 	        bfs.waitForCompletion(true);
 	        long endTime = System.currentTimeMillis();
 			System.err.println("Depth: " + i + ", Time: " + (endTime - startTime) + "ms");
-	        System.out.print((endTime - startTime) + "ms;");
+//	        System.out.print((endTime - startTime) + "ms;");
 		}
+    	System.out.println(source + "\t" + dest + "\t");
 	}
 	public static class PrefetchOpenMapper extends Mapper<LongWritable, Text, Text, Text> {
 		private Set<String> openNodes = new HashSet<String>();
