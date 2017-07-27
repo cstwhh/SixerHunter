@@ -1,5 +1,6 @@
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.Mapper;
@@ -42,11 +43,41 @@ public class OneDegreeGraph {
 		public void reduce(Text key, Iterable<Text> values, Context context)
 				throws IOException, InterruptedException {	 
 	    	  
-			ArrayList<String> info = new ArrayList<String>();			
+			HashSet<String> infoSet = new HashSet<String>();
+			StringBuilder infoStr = new StringBuilder();	
+
 			for (Text value : values){
-				info.add(value.toString());
+				
+				String info = value.toString();
+				
+				String[] movieActors = info.split("\\|");
+				infoStr.append(movieActors[0]+"|");
+				
+				boolean addNewActor = false;
+				//for(String actor:actors)
+				for(int i = 1;i < movieActors.length;i++)
+				{
+					if(!infoSet.contains(movieActors[i]))
+					{
+						addNewActor = true;
+						infoSet.add(movieActors[i]);
+						infoStr.append(movieActors[i]);
+						infoStr.append("|");
+					}
+				}
+				if(!addNewActor)
+				{
+					int movieIndex = infoStr.lastIndexOf("<@>");
+					
+					if(movieIndex == -1) {
+						System.out.println("movieIndex == -1, value: " + value.toString());
+						continue;
+					}
+					else infoStr.delete(movieIndex, infoStr.length());
+				}
+				infoStr.append("<@>");				
 	    	}
-			context.write(key, new Text(StringUtils.join(info,"\t")));
+			context.write(key, new Text(infoStr.toString()));
 		}
 	}
 	public static void main(String[] args) throws Exception {
