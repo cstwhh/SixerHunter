@@ -32,8 +32,8 @@ public class PrefetchOpen {
 //	public final static String source = "1";public final static String dest = "8";
 //	public final static String source = "Bernardo, Alecia"; public final static String dest = "Boyer, Erica"; //5
 //	public final static String source = "Bernardo, Alecia"; public final static String dest = "Dickson, Ronnie"; //7
-	public static String source = "Johansson, Scarlett"; public static String dest = "Blanchett, Cate";
-//	public final static String source = "Bernardo, Alecia"; public final static String dest = "Boyer, Ericdsadasa"; //13
+//	public static String source = "Johansson, Scarlett"; public static String dest = "Blanchett, Cate";
+	public static String source = "Bernardo, Alecia"; public static String dest = "Boyer, Ericdsadasa"; //13
 	public final static boolean cacheAll = false; 
 	public final static int MAX_CACHE_DEPTH = 5;
 //	public final static int MAX_CACHE_DEPTH = 20;
@@ -136,9 +136,9 @@ public class PrefetchOpen {
 	        bfs.waitForCompletion(true);
 	        long endTime = System.currentTimeMillis();
 			System.err.println("Depth: " + i + ", Time: " + (endTime - startTime) + "ms");
-//	        System.out.print((endTime - startTime) + "ms;");
+	        System.out.print((endTime - startTime) + "ms;");
 		}
-    	System.out.println(source + "\t" + dest + "\t");
+//    	System.out.println(source + "\t" + dest + "\t");
 	}
 	public static class PrefetchOpenMapper extends Mapper<LongWritable, Text, Text, Text> {
 		private Set<String> openNodes = new HashSet<String>();
