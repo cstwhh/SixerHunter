@@ -27,33 +27,34 @@ import org.apache.hadoop.util.GenericOptionsParser;
 import org.apache.hadoop.util.LineReader;
 
 // 保存open的数据，alldata只发送open的数据。如果open数据通过setup设置性能反而下降，那么就不再保存open数据
-public class PrefetchOpen {
-	public final static int DEPTH = 13;
+public class DegreeBFS {
+	public final static int DEPTH = 6;
 //	public final static String source = "1";public final static String dest = "8";
-//	public final static String source = "Bernardo, Alecia"; public final static String dest = "Boyer, Erica"; //5
+	public static String source = "Bernardo, Alecia"; public static String dest = "Boyer, Erica"; //5
 //	public final static String source = "Bernardo, Alecia"; public final static String dest = "Dickson, Ronnie"; //7
 //	public static String source = "Johansson, Scarlett"; public static String dest = "Blanchett, Cate";
-	public static String source = "Bernardo, Alecia"; public static String dest = "Boyer, Ericdsadasa"; //13
+//	public static String source = "Bernardo, Alecia"; public static String dest = "Boyer, Ericdsadasa"; //13
 	public final static boolean cacheAll = false; 
-	public final static int MAX_CACHE_DEPTH = 5;
+	public final static int MAX_CACHE_DEPTH = 1;
 //	public final static int MAX_CACHE_DEPTH = 20;
 	
 	public final static String resultFile = "result";
 	public final static String onlyOpenNodes = "o";
 	public final static String allNodes = "a";
+	public final static String moviesSeparator = "<@>";
 	// 表示只发送openNodes之中的节点的children
 //	public static boolean onlyOpenNodes = true;
 	public static void main(String[] args) throws Exception {		
 		Configuration conf = new Configuration();
 		String[] remainingArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
 //		for(String arg: remainingArgs) System.err.println(arg);
-		if (remainingArgs.length != 3 && remainingArgs.length != 5) {
-			System.err.println("Usage: PrefetchOpen <data> <inverted> <cachePath> (actor1, actor2)");
+		if (remainingArgs.length != 2 && remainingArgs.length != 4) {
+			System.err.println("Usage: PrefetchOpen <DegreeGraph> <CachePath> (actor1, actor2)");
 			System.exit(2);
 		}
-		if(remainingArgs.length == 5) {
-			source = remainingArgs[3];
-			dest = remainingArgs[4];
+		if(remainingArgs.length == 4) {
+			source = remainingArgs[2];
+			dest = remainingArgs[3];
 		}
         conf.set("source", source);
         conf.set("dest", dest);
@@ -66,8 +67,7 @@ public class PrefetchOpen {
     		fs.delete(resultPath, true);
     	}
 		String dataPath = remainingArgs[0]; 
-		String invertedDataPath = remainingArgs[1]; 
-		String cachePath = remainingArgs[2];
+		String cachePath = remainingArgs[1];
 		for(int i = 1;i <= DEPTH; ++i) {
 			long startTime = System.currentTimeMillis();
 			if(i == MAX_CACHE_DEPTH) {
@@ -76,8 +76,8 @@ public class PrefetchOpen {
     	    if(i > MAX_CACHE_DEPTH) {
     	        conf.set("nodes", allNodes);
     	    }
-	        Job bfs = Job.getInstance(conf, "PrefetchOpen");
-	        bfs.setJarByClass(PrefetchOpen.class);
+	        Job bfs = Job.getInstance(conf, "DegreeBFS");
+	        bfs.setJarByClass(DegreeBFS.class);
 	        // 已经写入结果了，则可以退出
         	if (fs.exists(resultPath)) {
         	    FSDataInputStream fin = fs.open(resultPath);
@@ -88,10 +88,10 @@ public class PrefetchOpen {
         	    	if(results.length < 1) System.exit(1);;
         	    	List<String> list = new ArrayList<String>();  
         	    	for(int s = 1; s < results.length; ++s) {
-        	    		list.add(results[s]);
+        	    		if(results[s].length() > 1) list.add(results[s]);
         	    	}
-        	    	System.err.println("result: " + StringUtils.join(list.toArray(), ","));
-        	    	System.out.println(source + "\t" + dest + "\t" + StringUtils.join(list.toArray(), ","));
+        	    	System.err.println("result: " + StringUtils.join(list.toArray(), "--"));
+//        	    	System.out.println(source + "\t" + dest + "\t" + StringUtils.join(list.toArray(), ","));
 //        	    	System.err.println("result: " + line);
         	    	System.exit(0);
         	    } 
@@ -102,7 +102,7 @@ public class PrefetchOpen {
 	        	String inputPath = cachePath + (i-1);
 	        	if(cacheAll) inputPath = cachePath + (i-1);
 	        	else inputPath = cachePath + ((i-1)%2);
-		        MultipleInputs.addInputPath(bfs, new Path(inputPath + "/part-r-00000"), TextInputFormat.class,PrefetchOpenMapper.class);
+		        MultipleInputs.addInputPath(bfs, new Path(inputPath + "/part-r-00000"), TextInputFormat.class,DegreeBFSMapper.class);
 		        if(i <= MAX_CACHE_DEPTH) {
 			        Path openNodePath = new Path(inputPath + "/opendata-r-00000");
 			        if(openNodePath.getFileSystem(conf).exists(openNodePath)) {
@@ -110,13 +110,7 @@ public class PrefetchOpen {
 			        }
 		        }
 	        }
-	        if(i % 2 ==1) {
-	        	// 演员表
-	        	MultipleInputs.addInputPath(bfs, new Path(dataPath), TextInputFormat.class,PrefetchOpenMapper.class);
-	        }
-	        else {
-	        	MultipleInputs.addInputPath(bfs, new Path(invertedDataPath), TextInputFormat.class,PrefetchOpenMapper.class);
-	        }
+	        MultipleInputs.addInputPath(bfs, new Path(dataPath), TextInputFormat.class,DegreeBFSMapper.class);
 	        bfs.setMapOutputKeyClass(Text.class);
 	        
 	        String outputPath;
@@ -127,20 +121,19 @@ public class PrefetchOpen {
 	        if (fileSystem.exists(path)) {  
 	            fileSystem.delete(path, true);
 	        }  
-	        MultipleOutputs.addNamedOutput(bfs, "opendata",   TextOutputFormat.class, Text.class, Text.class);
+	        MultipleOutputs.addNamedOutput(bfs, "opendata",  TextOutputFormat.class, Text.class, Text.class);
 	        FileOutputFormat.setOutputPath(bfs, new Path(outputPath));
 	        bfs.setOutputFormatClass(TextOutputFormat.class);
 	        bfs.setOutputKeyClass(Text.class);
 	        bfs.setOutputValueClass(Text.class);
-	        bfs.setReducerClass(PrefetchOpenReducer.class);
+	        bfs.setReducerClass(DegreeBFSReducer.class);
 	        bfs.waitForCompletion(true);
 	        long endTime = System.currentTimeMillis();
 			System.err.println("Depth: " + i + ", Time: " + (endTime - startTime) + "ms");
 	        System.out.print((endTime - startTime) + "ms;");
 		}
-//    	System.out.println(source + "\t" + dest + "\t");
 	}
-	public static class PrefetchOpenMapper extends Mapper<LongWritable, Text, Text, Text> {
+	public static class DegreeBFSMapper extends Mapper<LongWritable, Text, Text, Text> {
 		private Set<String> openNodes = new HashSet<String>();
 		private Configuration conf;
 		private boolean inOnlyOpenNodesMode = false;
@@ -177,6 +170,7 @@ public class PrefetchOpen {
 	    @Override
 	    public void map(LongWritable key, Text value, Context context)
 	          throws IOException, InterruptedException {
+	    	  //  children:movie|child|child<@>movie|child|child
 	    	  //  alldata:			<name children>
 	    	  //  cachedata.open:	<name children distance parent>
 	          //  cachedata.close:	<name>
@@ -184,7 +178,7 @@ public class PrefetchOpen {
       	  	  String[] info = value.toString().split("\t");
     		  String name = info[0];
     		  // all data
-    		  if(info.length == 2) {
+    		  if(info.length == 2)	{
     			  // alldata.source
     			  if(name.equals(conf.get("source"))) {
     				  // <name,distance parent>，fake自己是被父节点open的
@@ -206,14 +200,18 @@ public class PrefetchOpen {
     		  }
     		  // cachedata.open
     		  else if(info.length == 4){
-        		  String[] children = info[1].split("\\|");
+        		  String[] children = info[1].split(moviesSeparator);
     			  String distance = info[2];
     			  String parent = info[3];
 				  // 按照cachedata.open的发送规则<child,distance,parent>
 //    			  if(name.equals(conf.get("source"))) parent = name;else parent = (parent + "|" + name);
-    			  parent = (parent + "|" + name);
     			  for(int k = 0; k < children.length; ++k) {
-    				  context.write(new Text(children[k]), new Text(distance + "\t" + parent));
+    				  String[] childs = children[k].split("\\|");
+    				  if(childs.length < 2) continue;
+        			  String parents = (parent + "|" + name + "|" + childs[0] + "|");
+        			  for(int m = 1; m < childs.length; ++m) {
+        				  context.write(new Text(childs[m]), new Text(distance + "\t" + parents));
+        			  }
     			  }
     			  // 按照cachedata.all的发送规则<name,"<c>"> 
     			  context.write(new Text(name), new Text("<c>"));
@@ -226,7 +224,7 @@ public class PrefetchOpen {
     		  
 	    }
 	}
-	public static class PrefetchOpenReducer extends Reducer<Text,Text,Text,Text> {
+	public static class DegreeBFSReducer extends Reducer<Text,Text,Text,Text> {
 		private MultipleOutputs<Text, Text> mo;
         @Override
         protected void setup(Context context) throws IOException,
